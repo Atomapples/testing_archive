@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryo-EM Freezing Conditions Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f9fafb;
+            color: #111827;
+            line-height: 1.6;
+        }
+
+        .container {
+            min-height: 100vh;
+            padding: 24px;
+        }
+
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 1.875rem;
+            font-weight: bold;
+            color: #111827;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #1d4ed8;
+        }
+
+        .btn-secondary {
+            background-color: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+
+        .btn-danger {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #b91c1c;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 16px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 8px 12px 8px 40px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+        .filters-section {
+            margin-bottom: 24px;
+            padding: 16px;
+            background-color: #f9fafb;
+            border-radius: 6px;
+        }
+
+        .filters-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: #4b5563;
+            margin-bottom: 4px;
+        }
+
+        .filter-input {
+            width: 100%;
+            padding: 6px 12px;
+            font-size: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+        }
+
+        .filter-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 1px #2563eb;
+        }
+
+        .results-count {
+            margin-bottom: 16px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 1000px;
+        }
+
+        th, td {
+            border: 1px solid #d1d5db;
+            padding: 12px 16px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        tbody tr:hover {
+            background-color: #f9fafb;
+        }
+
+        .image-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .image-preview {
+            width: 64px;
+            height: 64px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+        }
+
+        .image-placeholder {
+            width: 64px;
+            height: 64px;
+            background-color: #f3f4f6;
+            border-radius: 4px;
+            border: 1px solid #d1d5db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: #6b7280;
+        }
+
+        .upload-btn {
+            background-color: #e5e7eb;
+            padding: 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .upload-btn:hover {
+            background-color: #d1d5db;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 8px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+        }
+
+        .modal-content {
+            padding: 24px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .form-input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .image-upload-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 24px 24px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+        }
+
+        .close-btn:hover {
+            color: #374151;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="header">
+                <h1>Cryo-EM Freezing Conditions Tracker</h1>
+                <button class="btn btn-primary" onclick="showAddForm()">
+                    ➕ Add Entry
+                </button>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="search-container">
+                <div class="search-icon">🔍</div>
+                <input
+                    type="text"
+                    class="search-input"
+                    placeholder="Search all fields..."
+                    id="searchInput"
+                    oninput="handleSearch()"
+                />
+            </div>
+
+            <!-- Column Filters -->
+            <div class="filters-section">
+                <div class="filters-header">
+                    <span>🔽</span>
+                    <span style="font-weight: 500; color: #374151;">Column Filters</span>
+                </div>
+                <div class="filters-grid" id="filtersGrid">
+                    <!-- Filter inputs will be generated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Results Count -->
+            <div class="results-count" id="resultsCount">
+                Showing 0 of 0 entries
+            </div>
+
+            <!-- Table -->
+            <div class="table-container">
+                <table>
+                    <thead id="tableHead">
+                        <!-- Headers will be generated by JavaScript -->
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Rows will be generated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Entry Modal -->
+            <div class="modal-overlay hidden" id="addModal">
+                <div class="modal">
+                    <div class="modal-header">
+                        <h2 class="modal-title">Add New Entry</h2>
+                        <button class="close-btn" onclick="hideAddForm()">
+                            ❌
+                        </button>
+                    </div>
+                    <div class="modal-content">
+                        <form id="addEntryForm">
+                            <div class="form-grid" id="formGrid">
+                                <!-- Form fields will be generated by JavaScript -->
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="hideAddForm()">Cancel</button>
+                        <button class="btn btn-primary" onclick="handleAddEntry()">Add Entry</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global state
+        let entries = [
+            {
+                id: 1,
+                date: '2024-01-15',
+                user: 'Alice Chen',
+                protein: 'TRPV1',
+                protein_concentration: '2.5 mg/ml',
+                grid: 'C-flat 1.2/1.3',
+                blot_force: '3',
+                blot_time: '4.5s',
+                wait_time: '12:30',
+                LMM: null,
+                representative_micrograph: null
+            },
+            {
+                id: 2,
+                date: '2024-01-16',
+                user: 'Bob Smith',
+                protein: 'β-galactosidase',
+                protein_concentration: '1.8 mg/ml',
+                grid: 'Quantifoil R1.2/1.3',
+                blot_force: '5',
+                blot_time: '3.0s',
+                wait_time: '09:15',
+                LMM: null,
+                representative_micrograph: null
+            }
+        ];
+
+        let filters = {};
+        let searchTerm = '';
+        let nextId = 3;
+
+        const columns = [
+            'date', 'user', 'protein', 'protein_concentration', 'grid', 
+            'blot_force', 'blot_time', 'wait_time', 'LMM', 'representative_micrograph'
+        ];
+
+        const newEntry = {
+            date: new Date().toISOString().split('T')[0],
+            user: '',
+            protein: '',
+            protein_concentration: '',
+            grid: '',
+            blot_force: '',
+            blot_time: '',
+            wait_time: '',
+            LMM: null,
+            representative_micrograph: null
+        };
+
+        // Utility functions
+        function formatColumnName(column) {
+            return column.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        }
+
+        function getFilteredEntries() {
+            return entries.filter(entry => {
+                // Apply search filter
+                const matchesSearch = searchTerm === '' || 
+                    Object.values(entry).some(value => 
+                        value && value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+
+                // Apply column filters
+                const matchesFilters = Object.entries(filters).every(([key, filterValue]) => {
+                    if (!filterValue) return true;
+                    const entryValue = entry[key];
+                    return entryValue && entryValue.toString().toLowerCase().includes(filterValue.toLowerCase());
+                });
+
+                return matchesSearch && matchesFilters;
+            });
+        }
+
+        // Event handlers
+        function handleSearch() {
+            searchTerm = document.getElementById('searchInput').value;
+            renderTable();
+        }
+
+        function handleFilterChange(column, value) {
+            filters[column] = value;
+            renderTable();
+        }
+
+        function handleImageUpload(entryId, event, column) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const entryIndex = entries.findIndex(entry => entry.id === entryId);
+                    if (entryIndex !== -1) {
+                        entries[entryIndex][column] = e.target.result;
+                        renderTable();
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleNewEntryImageUpload(event, column) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    newEntry[column] = e.target.result;
+                    // Update preview if exists
+                    const preview = document.getElementById(`preview-${column}`);
+                    if (preview) {
+                        preview.src = e.target.result;
+                        preview.style.display = 'block';
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function deleteEntry(entryId) {
+            if (confirm('Are you sure you want to delete this entry?')) {
+                entries = entries.filter(entry => entry.id !== entryId);
+                renderTable();
+            }
+        }
+
+        function showAddForm() {
+            document.getElementById('addModal').classList.remove('hidden');
+            generateForm();
+        }
+
+        function hideAddForm() {
+            document.getElementById('addModal').classList.add('hidden');
+            resetNewEntry();
+        }
+
+        function resetNewEntry() {
+            Object.keys(newEntry).forEach(key => {
+                if (key === 'date') {
+                    newEntry[key] = new Date().toISOString().split('T')[0];
+                } else if (key === 'LMM' || key === 'representative_micrograph') {
+                    newEntry[key] = null;
+                } else {
+                    newEntry[key] = '';
+                }
+            });
+        }
+
+        function handleAddEntry() {
+            const entry = {
+                ...newEntry,
+                id: nextId++
+            };
+            entries.push(entry);
+            renderTable();
+            hideAddForm();
+        }
+
+        // Rendering functions
+        function renderTable() {
+            const filteredEntries = getFilteredEntries();
+            
+            // Update results count
+            document.getElementById('resultsCount').textContent = 
+                `Showing ${filteredEntries.length} of ${entries.length} entries`;
+
+            // Render table header
+            const tableHead = document.getElementById('tableHead');
+            tableHead.innerHTML = `
+                <tr>
+                    ${columns.map(column => `<th>${formatColumnName(column)}</th>`).join('')}
+                    <th>Actions</th>
+                </tr>
+            `;
+
+            // Render table body
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = filteredEntries.map(entry => `
+                <tr>
+                    ${columns.map(column => {
+                        if (column === 'representative_micrograph' || column === 'LMM') {
+                            return `
+                                <td>
+                                    <div class="image-cell">
+                                        ${entry[column] ? 
+                                            `<img src="${entry[column]}" alt="${column}" class="image-preview" />` :
+                                            `<div class="image-placeholder">No image</div>`
+                                        }
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            onchange="handleImageUpload(${entry.id}, event, '${column}')"
+                                            class="hidden"
+                                            id="upload-${entry.id}-${column}"
+                                        />
+                                        <label for="upload-${entry.id}-${column}" class="upload-btn">
+                                            📤
+                                        </label>
+                                    </div>
+                                </td>
+                            `;
+                        }
+                        return `<td>${entry[column] || '-'}</td>`;
+                    }).join('')}
+                    <td>
+                        <button class="btn btn-danger" onclick="deleteEntry(${entry.id})" style="padding: 4px 8px; font-size: 12px;">
+                            ❌
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFilters() {
+            const filtersGrid = document.getElementById('filtersGrid');
+            const filterColumns = columns.filter(col => col !== 'representative_micrograph' && col !== 'LMM');
+            
+            filtersGrid.innerHTML = filterColumns.map(column => `
+                <div class="filter-group">
+                    <label>${formatColumnName(column)}</label>
+                    <input
+                        type="text"
+                        class="filter-input"
+                        placeholder="Filter by ${formatColumnName(column).toLowerCase()}..."
+                        value="${filters[column] || ''}"
+                        oninput="handleFilterChange('${column}', this.value)"
+                    />
+                </div>
+            `).join('');
+        }
+
+        function generateForm() {
+            const formGrid = document.getElementById('formGrid');
+            const regularColumns = columns.filter(col => col !== 'representative_micrograph' && col !== 'LMM');
+            
+            formGrid.innerHTML = `
+                ${regularColumns.map(column => `
+                    <div class="form-group">
+                        <label class="form-label">${formatColumnName(column)}</label>
+                        ${column === 'date' ? 
+                            `<input type="date" class="form-input" value="${newEntry[column]}" onchange="newEntry.${column} = this.value" />` :
+                            column === 'wait_time' ?
+                            `<input type="time" class="form-input" value="${newEntry[column]}" onchange="newEntry.${column} = this.value" />` :
+                            `<input type="text" class="form-input" value="${newEntry[column]}" placeholder="Enter ${formatColumnName(column).toLowerCase()}" onchange="newEntry.${column} = this.value" />`
+                        }
+                    </div>
+                `).join('')}
+                
+                <div class="form-group full-width">
+                    <label class="form-label">LMM Image</label>
+                    <div class="image-upload-section">
+                        <img id="preview-LMM" class="image-preview" style="display: none;" />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onchange="handleNewEntryImageUpload(event, 'LMM')"
+                        />
+                    </div>
+                </div>
+                
+                <div class="form-group full-width">
+                    <label class="form-label">Representative Micrograph</label>
+                    <div class="image-upload-section">
+                        <img id="preview-representative_micrograph" class="image-preview" style="display: none;" />
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onchange="handleNewEntryImageUpload(event, 'representative_micrograph')"
+                        />
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            renderTable();
+            renderFilters();
+        });
+    </script>
+</body>
+</html>
